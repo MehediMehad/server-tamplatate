@@ -1,0 +1,577 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  role            UserRoleEnum
+  password        String?
+  image           String?
+  status          UserStatusEnum @default(DEACTIVATE)
+  email           String         @unique
+  isDelete        Boolean        @default(false)
+  isProfileUpdate Boolean        @default(false)
+
+  fcmToken      String?
+  isVerified    Boolean  @default(false)
+  isSocialLogin Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Location Info
+  address   String?
+  latitude  Float?
+  longitude Float?
+
+  // Stripe Connect Account ID
+  customerId       String?
+  connectAccountId String?
+
+  // Relationship
+  notificationsReceive Notification[] @relation("receiver")
+  notificationsSend    Notification[] @relation("sender")
+  musician             Musician?
+  vocalists            Vocalists?
+  supperAdmin          SupperAdmin?
+  report               Report[]
+  instruments          Instrument[]
+  charity              Charity[]
+  favorites            Favorite[]
+  reviews              Review[]
+  booking              Booking[]
+
+  // Payment relationships
+  paymentsMade     Payment[] @relation("PaymentsMade") // user → payment as payer
+  paymentsReceived Payment[] @relation("PaymentsReceived") // user → payment as provider
+
+  // RefundRequest relationships
+  refundRequestsMade      RefundRequest[] @relation("RefundCustomer") // refunds requested by this user (as customer)
+  refundRequestsReceived  RefundRequest[] @relation("RefundProvider") // refunds received by this user (as provider)
+  refundRequestsProcessed RefundRequest[] @relation("RefundProcessedByAdmin") // refunds processed by this user (as admin)
+
+  @@map("users")
+}
+
+model SupperAdmin {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  email     String   @unique
+  userId    String   @unique @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("supper_admin")
+}
+
+model Musician {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Basic Info
+  name      String
+  email     String  @unique
+  image     String?
+  aboutUs   String?
+  address   String?
+  latitude  Float?
+  longitude Float?
+
+  // Contact & Reference
+  primaryName   String?
+  primaryEmail  String?
+  primaryNumber String?
+
+  // Professional Info
+  ratePerHour          Float?
+  experience           Int?
+  license              String?
+  musicalCertification String?
+  isProfileUpdate      Boolean              @default(false)
+  workDays             WorkDaysEnum[]
+  musicianType         MusicianTypeEnum?
+  praise               PraiseEnum[]
+  worship              WorshipEnum[]
+  skills               MusicianSkillsEnum[]
+
+  // Relations
+  userId String @unique @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
+
+  // Timestamps
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  favorite  Favorite[]
+  review    Review[]
+  booking   Booking[]
+
+  @@map("musicians")
+}
+
+model Vocalists {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Basic Info
+  name            String
+  email           String  @unique
+  number          String?
+  aboutUs         String?
+  image           String?
+  address         String?
+  latitude        Float?
+  longitude       Float?
+  isProfileUpdate Boolean @default(false)
+
+  // Contact & Reference
+  primaryName   String?
+  primaryEmail  String?
+  primaryNumber String?
+
+  // Professional Info
+  ratePerHour          Float?
+  experience           Int?
+  license              String?
+  musicalCertification String?
+  videoCV              String?
+  workDays             WorkDaysEnum[]
+  musicGenre           MusicGenreEnum[]
+  vocalistType         VocalistTypeEnum?
+  skills               VocalistSkillsEnum[]
+
+  // Relations
+  userId String @unique @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Timestamps
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  favorite  Favorite[]
+  review    Review[]
+  booking   Booking[]
+
+  @@map("vocalists")
+}
+
+model Instrument {
+  id          String                      @id @default(auto()) @map("_id") @db.ObjectId
+  creatorId   String                      @db.ObjectId
+  title       String
+  image       String
+  description String
+  ratePerHour Float
+  condition   InstrumentsConditionEnum
+  categories  InstrumentsCategoriesEnum[]
+  genre       InstrumentsGenresEnum[]
+  address     String
+  latitude    Float
+  longitude   Float
+  license     String?
+
+  // Primary Contact Person
+  contactName   String
+  contactNumber String
+  contactEmail  String
+  availability  WorkDaysEnum[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationship
+  creator  User       @relation(fields: [creatorId], references: [id])
+  favorite Favorite[]
+  review   Review[]
+  booking  Booking[]
+
+  @@map("instruments")
+}
+
+model Charity {
+  id                      String                  @id @default(auto()) @map("_id") @db.ObjectId
+  creatorId               String                  @db.ObjectId
+  name                    String
+  image                   String // Image
+  about                   String
+  congregationSize        Float
+  donationType            CharityDonationTypeEnum
+  categories              CharityCategoriesEnum
+  isPublish               Boolean                 @default(false)
+  verificationDocument    String // Image
+  exemptionCertificate    String? // Image
+  registrationCertificate String? // Image
+
+  address   String
+  latitude  Float
+  longitude Float
+  license   String?
+
+  // Primary Contact Person
+  contactName        String
+  roleInOrganization String
+  contactNumber      String
+  contactEmail       String
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relationship
+  creator  User       @relation(fields: [creatorId], references: [id])
+  favorite Favorite[]
+  review   Review[]
+
+  @@map("charity")
+}
+
+model Booking {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id])
+
+  musicianId String?   @db.ObjectId
+  musician   Musician? @relation(fields: [musicianId], references: [id])
+
+  vocalistId String?    @db.ObjectId
+  vocalist   Vocalists? @relation(fields: [vocalistId], references: [id])
+
+  instrumentId String?     @db.ObjectId
+  instrument   Instrument? @relation(fields: [instrumentId], references: [id])
+
+  bookDate  DateTime
+  startTime DateTime
+  endTime   DateTime
+
+  status    BookingStatus @default(PENDING)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  payment   Payment @relation(fields: [paymentId], references: [id])
+  paymentId String  @db.ObjectId
+
+  @@map("booking")
+}
+
+model Payment {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Who paid
+  customerId String @db.ObjectId
+  customer   User   @relation("PaymentsMade", fields: [customerId], references: [id])
+
+  // Who received
+  providerId String @db.ObjectId
+  provider   User   @relation("PaymentsReceived", fields: [providerId], references: [id])
+
+  bookingIds          String[]  @db.ObjectId
+  bookings            Booking[]
+  amount              Float
+  currency            String    @default("USD")
+  platformTotalAmount Float // 10%
+  providerTotalAmount Float // 90%
+
+  // Stripe refs
+  paymentIntentId            String
+  chargeId                   String?
+  providerTransferId         String? // release time transfer id (to connected account)
+  providerTransferReversedId String?
+  status                     PaymentStatus @default(HELD) // HELD → RELEASED/REFUNDED/FAILED
+
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  refundRequest RefundRequest[]
+
+  @@map("payments")
+}
+
+model RefundRequest {
+  id        String  @id @default(auto()) @map("_id") @db.ObjectId
+  paymentId String  @db.ObjectId
+  payment   Payment @relation(fields: [paymentId], references: [id])
+
+  customerId String @db.ObjectId
+  customer   User   @relation("RefundCustomer", fields: [customerId], references: [id])
+
+  providerId String @db.ObjectId
+  provider   User   @relation("RefundProvider", fields: [providerId], references: [id])
+
+  reason String
+
+  status         RefundStatus @default(PENDING)
+  stripeRefundId String?
+
+  processedByAdminId String? @db.ObjectId
+  processedByAdmin   User?   @relation("RefundProcessedByAdmin", fields: [processedByAdminId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum RefundStatus {
+  PENDING
+  REJECTED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  HELD
+  REQUESTED
+  RELEASED
+  REFUNDED
+  FAILED
+}
+
+enum BookingStatus {
+  PENDING
+  COMPLETED
+  CANCELLED
+}
+
+model Report {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  bookingId   String   @db.ObjectId
+  description String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([userId, bookingId], name: "userId_bookingId")
+  @@map("reports")
+}
+
+model Favorite {
+  id     String           @id @default(auto()) @map("_id") @db.ObjectId
+  itemId String           @unique @db.ObjectId
+  user   User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String           @db.ObjectId
+  type   FavoriteTypeEnum
+
+  instrument   Instrument? @relation(fields: [instrumentId], onDelete: Cascade, references: [id])
+  instrumentId String?     @db.ObjectId
+
+  musician   Musician? @relation(fields: [musicianId], onDelete: Cascade, references: [id])
+  musicianId String?   @db.ObjectId
+
+  vocalist   Vocalists? @relation(fields: [vocalistId], onDelete: Cascade, references: [id])
+  vocalistId String?    @db.ObjectId
+
+  charity   Charity? @relation(fields: [vocalistId], onDelete: Cascade, references: [id])
+  charityId String?  @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, itemId])
+  @@map("favorites")
+}
+
+model Review {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+
+  // Review Content
+  rating  Int // Rating from 1 to 5
+  comment String?
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String @db.ObjectId
+
+  instrument   Instrument? @relation(fields: [instrumentId], references: [id], onDelete: Cascade)
+  instrumentId String?     @db.ObjectId
+
+  musician   Musician? @relation(fields: [musicianId], references: [id], onDelete: Cascade)
+  musicianId String?   @db.ObjectId
+
+  vocalist   Vocalists? @relation(fields: [vocalistId], references: [id], onDelete: Cascade)
+  vocalistId String?    @db.ObjectId
+
+  charity   Charity? @relation(fields: [charityId], references: [id], onDelete: Cascade)
+  charityId String?  @db.ObjectId
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, instrumentId, musicianId, vocalistId, charityId])
+  @@map("reviews")
+}
+
+model Otp {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  hexCode   String   @unique
+  otp       String
+  expiry    DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("otps")
+}
+
+model Notification {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  receiverId String   @db.ObjectId
+  senderId   String?  @db.ObjectId
+  title      String
+  body       String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  receiver   User     @relation(fields: [receiverId], references: [id], name: "receiver")
+  sender     User?    @relation(fields: [senderId], references: [id], name: "sender")
+
+  @@map("notifications")
+}
+
+model Terms {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  description String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("terms")
+}
+
+model Policy {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  description String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@map("policy")
+}
+
+// FavoriteType Enum
+enum FavoriteTypeEnum {
+  MUSICIAN
+  VOCALIST
+  INSTRUMENT
+  CHARITY
+}
+
+// ReviewItemType Enum
+enum ReviewItemTypeEnum {
+  INSTRUMENT
+  CHARITY
+  MUSICIAN
+  VOCALIST
+}
+
+// Users Enum
+enum UserRoleEnum {
+  SUPERADMIN
+  USER
+  MUSICIAN
+  VOCALIST
+}
+
+enum UserStatusEnum {
+  DEACTIVATE
+  ACTIVE
+  BLOCKED
+}
+
+enum MusicianTypeEnum {
+  MusicInstructor
+  Instrumentalist
+}
+
+enum PraiseEnum {
+  AllPraise
+  AfroPraise
+  Contemporary
+  Highlife
+  Ariaria
+  Makossa
+  Reggae
+  Bikossi
+}
+
+enum WorshipEnum {
+  AllWorship
+  AfroWorship
+  Contemporary
+  Highlife
+  Ariaria
+  Makossa
+  Reggae
+  Bikossi
+}
+
+enum MusicianSkillsEnum {
+  Guitar
+  Piano
+  Drums
+  Saxophone
+}
+
+enum VocalistTypeEnum {
+  Performer
+  VocalCoach
+}
+
+enum MusicGenreEnum {
+  Pop
+  Classical
+  Rock
+  Jazz
+  Blues
+}
+
+enum VocalistSkillsEnum {
+  PitchControl
+  VocalRange
+  BreathingControl
+  VocalTechnique
+}
+
+enum WorkDaysEnum {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY // THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+// Instruments Enum
+enum InstrumentsConditionEnum {
+  New
+  Used
+  Refurbished
+}
+
+enum InstrumentsCategoriesEnum {
+  Piano
+  Guitar
+  Drums
+  Saxophone
+  Violin
+}
+
+enum InstrumentsGenresEnum {
+  Classical
+  Jazz
+  Rock
+  Pop
+  RBSoul
+}
+
+// Charity Enum
+enum CharityCategoriesEnum {
+  Charity
+  NonProfit
+  Christian
+}
+
+enum CharityDonationTypeEnum {
+  Offerings
+  Tithes
+  Others
+}
