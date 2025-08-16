@@ -50,7 +50,7 @@ app.use("/api/v1", router);
 // 🧯 Global Error Handler
 app.use(globalErrorHandler);
 
-// 🚫 404 Not Found Handler.
+// 🚫 404 Not Found Handler
 app.use((req: Request, res: Response) => {
   res.status(httpStatus.NOT_FOUND).json({
     success: false,
