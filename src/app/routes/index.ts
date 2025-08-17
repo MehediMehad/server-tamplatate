@@ -10,6 +10,7 @@ import { CharityRouters } from "../modules/Charity/charity.routes";
 import { MusicianRouters } from "../modules/Musician/musician.routes";
 import { BookingRouters } from "../modules/Booking/booking.routes";
 import { VocalistRouters } from "../modules/Vocalist/vocalist.routes";
+import { LogsRoutes } from "../modules/Logs/logs.routes";
 
 const router = express.Router();
 
@@ -57,6 +58,10 @@ const moduleRoutes = [
   {
     path: "/notification",
     route: NotificationsRouters,
+  },
+  {
+    path: "/logs",
+    route: LogsRoutes,
   },
 ];
 

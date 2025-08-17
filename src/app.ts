@@ -5,6 +5,7 @@ import morgan from "morgan"; // 📋 HTTP request logger
 
 import router from "./app/routes";
 import globalErrorHandler from "./app/errors/globalErrorHandler";
+import path from "path/win32";
 
 const app: Application = express();
 
@@ -18,14 +19,13 @@ if (process.env.NODE_ENV === "development") {
 // 🌐 CORS Configuration (support multiple origins)
 app.use(
   cors({
-    origin: process.env.CLIENT_ORIGIN?.split(",") || ["http://localhost:3000"],
+    origin: process.env.CLIENT_ORIGIN?.split(",") || [
+      "http://192.168.0.103:5030",
+      "http://localhost:5030",
+    ],
     credentials: true,
   })
 );
-
-// // 📦 Body Parsers (handle large payloads)
-// app.use(express.json({ limit: "10mb" }));
-// app.use(express.urlencoded({ extended: true }));
 
 // 📦 Body parser – apply only when NOT multipart/form-data
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -39,10 +39,21 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   }
 });
 
-// ❤️ Health Check Endpoint
-app.get("/", (_req: Request, res: Response) =>
-  res.status(httpStatus.OK).json({ message: "🟢 Server is up and running." })
-);
+// Set EJS as the view engine
+app.set("view engine", "ejs");
+app.set("views", path.join(__dirname, "../../"));
+
+// Serve static files from the project root
+app.use(express.static(path.join(__dirname, "../../")));
+
+// Health Check Endpoint
+app.get("/", (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, "../../health.html"));
+});
+
+app.get("/error", (req: Request, res: Response) => {
+  throw new Error("This is a forced error!");
+});
 
 // 📡 API Routes
 app.use("/api/v1", router);

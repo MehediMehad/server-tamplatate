@@ -7,6 +7,7 @@ import { NextFunction, Request, Response } from "express";
 import { ZodError } from "zod";
 import AppError from "./ApiError";
 import handleZodError from "./handleZodError";
+import logger from "../config/logger";
 
 const globalErrorHandler = (
   err: any,
@@ -14,10 +15,26 @@ const globalErrorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  console.log(err);
   let statusCode = 500;
   let message = "Something went wrong!";
   let errorDetails: Record<string, any> = {};
+
+  // Log error with Winston
+  logger.error({
+    message: err.message || "Something went wrong!",
+    statusCode: err.statusCode || statusCode,
+    path: req.originalUrl,
+    method: req.method,
+    stack: err.stack,
+    errorDetails: {
+      code: err.code,
+      meta: err.meta,
+      cause: err.meta?.cause,
+      target: err.meta?.target,
+      field_name: err.meta?.field_name,
+      modelName: err.meta?.modelName,
+    },
+  });
 
   if (err instanceof ZodError) {
     const simplifiedError = handleZodError(err);
@@ -25,7 +42,6 @@ const globalErrorHandler = (
     message = simplifiedError?.message || "Validation error";
     errorDetails = simplifiedError?.errorDetails || {};
   } else if (err?.code === "P2002") {
-    // Handle Prisma Duplicate entity error (Fix applied here)
     statusCode = 409;
     message = `Duplicate entity on the fields: ${
       Array.isArray(err.meta?.target)

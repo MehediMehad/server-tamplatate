@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Error Logs</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      }
+      h1 {
+        text-align: center;
+        color: #333;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 20px 0;
+        background: #fff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 12px;
+        text-align: left;
+      }
+      th {
+        background-color: #4caf50;
+        color: white;
+      }
+      tr:nth-child(even) {
+        background-color: #f9f9f9;
+      }
+      tr:hover {
+        background-color: #f1f1f1;
+      }
+      pre {
+        white-space: pre-wrap;
+        font-size: 0.9em;
+        color: #333;
+      }
+      .error-message {
+        color: #d32f2f;
+        text-align: center;
+        font-size: 1.2em;
+      }
+      a {
+        display: inline-block;
+        margin: 20px 0;
+        color: #4caf50;
+        text-decoration: none;
+        font-weight: bold;
+      }
+      a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Error Logs</h1>
+    <a href="/health.html">Back to Health Check</a>
+    <% if (logs && logs.length > 0) { %>
+    <table id="logsTable">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Message</th>
+          <th>Status Code</th>
+          <th>Path</th>
+          <th>Method</th>
+          <th>Stack</th>
+        </tr>
+      </thead>
+      <tbody id="logsBody">
+        <% logs.forEach(log => { %>
+        <tr>
+          <td><%= log.timestamp || "N/A" %></td>
+          <td><%= log.message || "N/A" %></td>
+          <td><%= log.statusCode || "N/A" %></td>
+          <td><%= log.path || "N/A" %></td>
+          <td><%= log.method || "N/A" %></td>
+          <td><pre><%= log.stack || "N/A" %></pre></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } else { %>
+    <p class="error-message">No error logs found.</p>
+    <% } %>
+  </body>
+</html>
