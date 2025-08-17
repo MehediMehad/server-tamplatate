@@ -44,9 +44,10 @@
     </table>
 
     <script>
-      const token = "YOUR_NEW_SUPERADMIN_TOKEN"; // Replace with new token
+      const token =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4OTAzNjc4ZGNmZmQ5MmYyNTk2NjIyMyIsImVtYWlsIjoiYWRtaW5AZ21haWwuY29tIiwicm9sZSI6IlNVUEVSQURNSU4iLCJpYXQiOjE3NTU0MTQxOTEsImV4cCI6MTc1ODAwNjE5MX0.Mh8R6_85qaCvPJfX-ekqVdELQUCKZhnim1plLTvXkuA"; // Replace with new token
       console.log("Sending Authorization Header:", `Bearer ${token}`); // Debug log
-      fetch("http://192.168.0.103:5030/api/v1/logs/errors", {
+      fetch("http://localhost:5030/api/v1/logs/errors", {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       })
@@ -61,13 +62,13 @@
             data.data.forEach((log) => {
               const row = document.createElement("tr");
               row.innerHTML = `
-              <td>${log.timestamp || "N/A"}</td>
-              <td>${log.message || "N/A"}</td>
-              <td>${log.statusCode || "N/A"}</td>
-              <td>${log.path || "N/A"}</td>
-              <td>${log.method || "N/A"}</td>
-              <td><pre>${log.stack || "N/A"}</pre></td>
-            `;
+                   <td>${log.timestamp || "N/A"}</td>
+                   <td>${log.message || "N/A"}</td>
+                   <td>${log.statusCode || "N/A"}</td>
+                   <td>${log.path || "N/A"}</td>
+                   <td>${log.method || "N/A"}</td>
+                   <td><pre>${log.stack || "N/A"}</pre></td>
+                 `;
               tbody.appendChild(row);
             });
           } else {
